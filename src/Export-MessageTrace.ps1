@@ -34,7 +34,7 @@ param(
     # Add recipients here (comma seperated)
     [Parameter(Mandatory=$false)] $Recipients = @(
         "recip1@contoso.onmicrosoft.com",
-        "recip2@contoso.onmicrosoft.com.us"),
+        "recip2@contoso.onmicrosoft.com"),
 
     [Parameter(Mandatory=$false)] $PageSize = 1000
 )
@@ -46,7 +46,10 @@ Function Connect-O365PowerShell
     $o365PowerShellUrl = "https://outlook.office365.com/PowerShell-LiveID"
     $pass = ConvertTo-SecureString -AsPlainText -Force (Get-Content $PasswordFile)
     $credential = New-Object PSCredential($Username, $pass)
-    $session = New-PSSession -ConnectionUri $o365PowerShellUrl -ConfigurationName Microsoft.Exchange -Credential $credential -Authentication Basic
+    $session = New-PSSession -ConnectionUri $o365PowerShellUrl `
+                    -ConfigurationName Microsoft.Exchange `
+                    -Credential $credential `
+                    -Authentication Basic
 
     Import-PSSession $session -AllowClobber
     return $session
@@ -63,6 +66,7 @@ try
 
     do
     {
+        # Run the Get-MessageTrace cmdlet to get the next page of results
         $messages = Get-MessageTrace `
                         -RecipientAddress $recipients `
                         -Page $page -PageSize $PageSize `
