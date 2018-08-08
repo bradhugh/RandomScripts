@@ -98,12 +98,19 @@ Function Receive-Response
         [string]$DonePrefix = $Null
     )
 
+    $resp = $null
+
     do
     {
         $resp = $Reader.ReadLine()
         Write-Output $resp
     }
     while ($DonePrefix -and -not $resp.StartsWith("$DonePrefix "))
+
+    if ($resp -notmatch "^.+? OK")
+    {
+        throw "ERROR response was received from IMAP server: '$resp'"
+    }
 }
 
 Function Execute-Command
