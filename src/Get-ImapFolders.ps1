@@ -29,7 +29,7 @@ param(
     [Parameter(Mandatory=$true)]
     $Username,
     [Parameter(Mandatory=$true)]
-    $Password,
+    [SecureString]$Password,
     [Parameter(Mandatory=$false)]
     $Port = 0,
     [Parameter(Mandatory=$false)]
@@ -39,6 +39,26 @@ param(
 $ErrorActionPreference = "Stop"
 
 $script:CommandCounter = 1
+
+Function ConvertFrom-SecureString
+{
+    param(
+        [securestring]$Secure
+    )
+
+    $bstr = $null
+    try {
+        $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Secure)
+        $unsecure = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+
+        return $unsecure
+    }
+    finally {
+        if ($bstr) {
+            [System.Runtime.InteropServices.Marshal]::FreeBSTR($bstr)
+        }
+    }
+}
 
 Function Connect-ImapServer
 {
@@ -151,7 +171,9 @@ try
     $connection = Connect-ImapServer -Server $Server -Port $Port -Ssl $Ssl
     $resp = Receive-Response -Reader $connection.Reader
 
-    $resp = Execute-Command -CommandText "LOGIN `"$($Username)`" `"$($Password)`"" -Writer $connection.Writer -Reader $connection.Reader
+    $plainPassword = ConvertFrom-SecureString -Secure $Password
+
+    $resp = Execute-Command -CommandText "LOGIN `"$Username`" `"$plainPassword`"" -Writer $connection.Writer -Reader $connection.Reader
     $resp = Execute-Command -CommandText "LIST `"`" `"*`"" -Writer $connection.Writer -Reader $connection.Reader
     Write-Output $resp
 }
