@@ -181,7 +181,7 @@ try
     if ($HashFolderNames)
     {
         $sha1 = new-Object System.Security.Cryptography.SHA1CryptoServiceProvider
-        $exp = New-Object System.Text.RegularExpressions.Regex('^\* LIST\s+\(.+?\)\s+"."\s+"(?<path>.+)"$')
+        $exp = New-Object System.Text.RegularExpressions.Regex('^\* LIST\s+\(.+?\)\s+"."\s+"?(?<path>.+?)"?$')
         $resp | Where-Object { $_[0] -eq '*' } | Foreach-Object {
             $match = $exp.Match($_);
             if ($match.Success) {
