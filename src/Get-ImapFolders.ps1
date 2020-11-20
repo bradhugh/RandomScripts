@@ -33,7 +33,9 @@ param(
     [Parameter(Mandatory=$false)]
     $Port = 0,
     [Parameter(Mandatory=$false)]
-    $Ssl = $true
+    $Ssl = $true,
+    [Parameter(Mandatory=$false)]
+    [switch]$HashFolderNames = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -175,7 +177,34 @@ try
 
     $resp = Execute-Command -CommandText "LOGIN `"$Username`" `"$plainPassword`"" -Writer $connection.Writer -Reader $connection.Reader
     $resp = Execute-Command -CommandText "LIST `"`" `"*`"" -Writer $connection.Writer -Reader $connection.Reader
-    Write-Output $resp
+
+    if ($HashFolderNames)
+    {
+        $sha1 = new-Object System.Security.Cryptography.SHA1CryptoServiceProvider
+        $exp = New-Object System.Text.RegularExpressions.Regex('^\* LIST\s+\(.+?\)\s+"."\s+"(?<path>.+)"$')
+        $resp | Where-Object { $_[0] -eq '*' } | Foreach-Object {
+            $match = $exp.Match($_);
+            if ($match.Success) {
+
+                $path = $match.Groups["path"].Value
+                $pathBytes = [System.Text.Encoding]::UTF8.GetBytes($path.ToLowerInvariant())
+                $hashBytes = $sha1.ComputeHash($pathBytes)
+                $hashHex = New-Object System.Text.StringBuilder
+                $hashBytes | ForEach-Object { $hashHex.AppendFormat("{0:X}", $_) | Out-Null }
+
+                $hashRecord = New-Object PSObject -Property @{
+                    FolderPath = $path
+                    FolderHash = $hashHex.ToString()
+                }
+
+                Write-Output $hashRecord
+            }
+        }
+    }
+    else
+    {
+        Write-Output $resp
+    }
 }
 finally
 {
