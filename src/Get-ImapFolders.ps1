@@ -185,12 +185,11 @@ try
         $resp | Where-Object { $_[0] -eq '*' } | Foreach-Object {
             $match = $exp.Match($_);
             if ($match.Success) {
-
                 $path = $match.Groups["path"].Value
                 $pathBytes = [System.Text.Encoding]::UTF8.GetBytes($path.ToLowerInvariant())
                 $hashBytes = $sha1.ComputeHash($pathBytes)
                 $hashHex = New-Object System.Text.StringBuilder
-                $hashBytes | ForEach-Object { $hashHex.AppendFormat("{0:X}", $_) | Out-Null }
+                $hashBytes | ForEach-Object { $hashHex.AppendFormat("{0:X2}", $_) | Out-Null }
 
                 $hashRecord = New-Object PSObject -Property @{
                     FolderPath = $path
@@ -198,6 +197,9 @@ try
                 }
 
                 Write-Output $hashRecord
+            }
+            else {
+                Write-Warning "Failed to parse response line: $_"
             }
         }
     }
